@@ -35,6 +35,7 @@ func (e *Enumerator) Enumerate(ctx context.Context, channelURL string, n int) ([
 	out, err := e.r.Run(ctx,
 		"--flat-playlist",
 		"--ignore-errors",
+		"--extractor-args", "youtubetab:approximate_date",
 		"--playlist-end", strconv.Itoa(n),
 		"--print", "%(id)s\t%(title)s\t%(upload_date)s\t%(live_status)s",
 		listURL,
