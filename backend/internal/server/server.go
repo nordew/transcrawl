@@ -127,8 +127,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			send(sseEvent{Type: "enumerated", Channel: handle, Total: total})
 		},
 		OnVideo: func(handle string, mv storage.ManifestVideo) {
-			v := mv
-			send(sseEvent{Type: "video", Channel: handle, Video: &v})
+			send(sseEvent{Type: "video", Channel: handle, Video: &mv})
 		},
 		OnChannelError: func(url string, err error) {
 			send(sseEvent{Type: "channel_error", URL: url, Message: err.Error()})

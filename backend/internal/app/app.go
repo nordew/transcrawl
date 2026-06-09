@@ -64,10 +64,10 @@ func (d Deps) emitChannelError(url string, err error) {
 }
 
 type Summary struct {
-	OK           int
-	Skipped      int
-	NoTranscript int
-	Failed       int
+	OK           int `json:"ok"`
+	Skipped      int `json:"skipped"`
+	NoTranscript int `json:"no_transcript"`
+	Failed       int `json:"failed"`
 }
 
 func (s Summary) String() string {

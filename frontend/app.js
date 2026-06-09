@@ -103,7 +103,11 @@ function start() {
   });
 
   source = new EventSource("/api/stream?" + params.toString());
-  source.onmessage = (ev) => handle(JSON.parse(ev.data));
+  source.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch (_) { return; }
+    handle(msg);
+  };
   source.onerror = () => {
     if (source && source.readyState === EventSource.CLOSED) return;
     stop("Connection lost.");
@@ -146,7 +150,7 @@ function handle(ev) {
       break;
     case "done": {
       const s = ev.summary || {};
-      stop(`Done — ${s.OK || 0} saved, ${s.Skipped || 0} skipped, ${s.NoTranscript || 0} no captions, ${s.Failed || 0} failed.`);
+      stop(`Done — ${s.ok || 0} saved, ${s.skipped || 0} skipped, ${s.no_transcript || 0} no captions, ${s.failed || 0} failed.`);
       els.fill.style.width = "100%";
       break;
     }
@@ -230,8 +234,10 @@ function fmtDate(d) {
 
 const drawer = $("drawer");
 const scrim = $("scrim");
+let drawerOpener = null;
 
 async function openDrawer(handle, file, title) {
+  drawerOpener = document.activeElement;
   $("drawer-title").textContent = title;
   $("drawer-sub").textContent = file;
   const q = `channel=${encodeURIComponent(handle)}&file=${encodeURIComponent(file)}`;
@@ -257,10 +263,13 @@ function showDrawer() {
   drawer.style.animation = "none";
   void drawer.offsetWidth;
   drawer.style.animation = "";
+  $("drawer-close").focus();
 }
 function hideDrawer() {
   scrim.hidden = true;
   drawer.hidden = true;
+  if (drawerOpener && typeof drawerOpener.focus === "function") drawerOpener.focus();
+  drawerOpener = null;
 }
 scrim.addEventListener("click", hideDrawer);
 $("drawer-close").addEventListener("click", hideDrawer);
