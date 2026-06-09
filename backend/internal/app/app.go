@@ -39,6 +39,28 @@ type Deps struct {
 	Store        *storage.Store
 	Now          func() time.Time
 	RetryBackoff time.Duration
+
+	OnEnumerated   func(handle string, total int)
+	OnVideo        func(handle string, mv storage.ManifestVideo)
+	OnChannelError func(url string, err error)
+}
+
+func (d Deps) emitEnumerated(handle string, total int) {
+	if d.OnEnumerated != nil {
+		d.OnEnumerated(handle, total)
+	}
+}
+
+func (d Deps) emitVideo(handle string, mv storage.ManifestVideo) {
+	if d.OnVideo != nil {
+		d.OnVideo(handle, mv)
+	}
+}
+
+func (d Deps) emitChannelError(url string, err error) {
+	if d.OnChannelError != nil {
+		d.OnChannelError(url, err)
+	}
 }
 
 type Summary struct {
@@ -97,8 +119,11 @@ func plan(ctx context.Context, cfg config.Config, deps Deps) ([]*channelWork, []
 		videos, err := deps.Enumerator.Enumerate(ctx, url, cfg.Last)
 		if err != nil {
 			log.Error("enumerating channel failed; skipping", "channel", url, "err", err)
+			deps.emitChannelError(url, err)
 			continue
 		}
+		log.Info("enumerated channel", "channel", url, "handle", handle, "videos", len(videos))
+		deps.emitEnumerated(handle, len(videos))
 		if len(videos) == 0 {
 			log.Warn("channel has no videos", "channel", url)
 			continue
@@ -106,9 +131,9 @@ func plan(ctx context.Context, cfg config.Config, deps Deps) ([]*channelWork, []
 		dir, err := deps.Store.ChannelDir(handle)
 		if err != nil {
 			log.Error("creating channel dir failed; skipping", "channel", url, "err", err)
+			deps.emitChannelError(url, err)
 			continue
 		}
-		log.Info("enumerated channel", "channel", url, "handle", handle, "videos", len(videos))
 
 		cw := &channelWork{
 			url:      url,
@@ -127,6 +152,7 @@ func plan(ctx context.Context, cfg config.Config, deps Deps) ([]*channelWork, []
 				mv.Status = statusSkipped
 				mv.Reason = "live or upcoming stream"
 				cw.manifest[j] = mv
+				deps.emitVideo(handle, mv)
 				continue
 			}
 
@@ -137,6 +163,7 @@ func plan(ctx context.Context, cfg config.Config, deps Deps) ([]*channelWork, []
 				mv.Status = statusSkipped
 				mv.File = fname
 				cw.manifest[j] = mv
+				deps.emitVideo(handle, mv)
 				continue
 			}
 
@@ -161,7 +188,9 @@ func runPool(ctx context.Context, cfg config.Config, deps Deps, jobs []job) {
 		go func() {
 			defer wg.Done()
 			for j := range jobCh {
-				j.cw.manifest[j.idx] = process(ctx, deps, opts, j)
+				mv := process(ctx, deps, opts, j)
+				j.cw.manifest[j.idx] = mv
+				deps.emitVideo(j.cw.handle, mv)
 			}
 		}()
 	}

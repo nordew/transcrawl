@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>transcrawl</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <div class="brand">
+      <h1>transcrawl<span class="dot">.</span></h1>
+      <p class="tagline">Harvest YouTube transcripts, newest first.</p>
+    </div>
+    <div class="ribbon" id="ribbon" hidden>
+      <div class="chip chip--ok"><span class="num" id="c-ok">0</span><label>saved</label></div>
+      <div class="chip chip--skip"><span class="num" id="c-skip">0</span><label>skipped</label></div>
+      <div class="chip chip--none"><span class="num" id="c-none">0</span><label>no captions</label></div>
+      <div class="chip chip--fail"><span class="num" id="c-fail">0</span><label>failed</label></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="console" id="console">
+      <form id="form" autocomplete="off">
+        <label class="field field--full">
+          <span class="field__label">Channels</span>
+          <textarea id="channels" rows="2" placeholder="@handle, /channel/UC..., or full URL — one per line or comma-separated" required></textarea>
+        </label>
+
+        <div class="row">
+          <label class="field field--n">
+            <span class="field__label">Last</span>
+            <input id="last" type="number" min="1" value="10" />
+          </label>
+          <label class="field">
+            <span class="field__label">Languages</span>
+            <input id="langs" type="text" value="en" placeholder="uk,en" />
+          </label>
+          <label class="field">
+            <span class="field__label">Format</span>
+            <span class="select">
+              <select id="format">
+                <option value="txt">clean text</option>
+                <option value="srt">srt</option>
+                <option value="vtt">vtt</option>
+                <option value="json">json</option>
+              </select>
+            </span>
+          </label>
+        </div>
+
+        <div class="row row--toggles">
+          <label class="toggle">
+            <input id="manual_only" type="checkbox" />
+            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+            <span class="toggle__label">Human captions only</span>
+          </label>
+          <label class="toggle">
+            <input id="overwrite" type="checkbox" />
+            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+            <span class="toggle__label">Re-fetch existing</span>
+          </label>
+
+          <div class="actions">
+            <button type="button" id="stop" class="btn btn--ghost" hidden>Stop</button>
+            <button type="submit" id="go" class="btn btn--go">
+              <span class="btn__label">Fetch transcripts</span>
+              <span class="btn__spin" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <div class="progress" id="progress" hidden>
+      <div class="progress__bar"><span id="progress-fill"></span></div>
+      <div class="progress__meta"><span id="progress-text">Waiting…</span></div>
+    </div>
+
+    <section class="results" id="results" aria-live="polite"></section>
+
+    <div class="empty" id="empty">
+      <p>Paste a channel above and pull its latest transcripts.</p>
+      <p class="empty__hint">Files land in your output directory and stay there — re-runs resume where they left off.</p>
+    </div>
+  </main>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" hidden aria-label="Transcript viewer">
+    <div class="drawer__head">
+      <div class="drawer__title">
+        <h2 id="drawer-title">Transcript</h2>
+        <p id="drawer-sub" class="mono"></p>
+      </div>
+      <div class="drawer__tools">
+        <a id="drawer-dl" class="btn btn--ghost btn--sm" href="#">Download</a>
+        <button id="drawer-close" class="iconbtn" aria-label="Close">✕</button>
+      </div>
+    </div>
+    <div class="drawer__body" id="drawer-body"></div>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -12,6 +12,7 @@ import (
 	"github.com/romanhorishnyi/transcrawl/internal/app"
 	"github.com/romanhorishnyi/transcrawl/internal/channel"
 	"github.com/romanhorishnyi/transcrawl/internal/config"
+	"github.com/romanhorishnyi/transcrawl/internal/server"
 	"github.com/romanhorishnyi/transcrawl/internal/storage"
 	"github.com/romanhorishnyi/transcrawl/internal/transcript"
 	"github.com/romanhorishnyi/transcrawl/internal/ytdlp"
@@ -43,7 +44,7 @@ func newRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return run(cmd.Context(), cfg)
+			return runFetch(cmd.Context(), cfg)
 		},
 	}
 
@@ -60,28 +61,38 @@ func newRootCmd() *cobra.Command {
 	f.BoolVar(&raw.Manifest, "manifest", true, "write a manifest.json index per channel")
 	f.BoolVarP(&raw.Verbose, "verbose", "v", false, "verbose logging")
 
+	cmd.AddCommand(newServeCmd())
 	return cmd
 }
 
-func run(parent context.Context, cfg config.Config) error {
+func newServeCmd() *cobra.Command {
+	var addr, out, web string
+	cmd := &cobra.Command{
+		Use:           "serve",
+		Short:         "Run the web UI and HTTP API",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runServe(cmd.Context(), addr, out, web)
+		},
+	}
+	f := cmd.Flags()
+	f.StringVar(&addr, "addr", ":8080", "address to listen on")
+	f.StringVarP(&out, "out", "o", "./transcripts", "output root directory")
+	f.StringVar(&web, "web", "frontend", "directory of frontend static files")
+	return cmd
+}
+
+func runFetch(parent context.Context, cfg config.Config) error {
 	ctx, stop := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	log := newLogger(cfg.Verbose)
 
-	var limiter *rate.Limiter
-	if cfg.Sleep > 0 {
-		limiter = rate.NewLimiter(rate.Every(cfg.Sleep), 1)
-	}
-	runner := ytdlp.New(limiter)
-
-	version, err := runner.CheckInstalled(ctx)
+	runner, err := newRunner(ctx, log, cfg.Sleep)
 	if err != nil {
-		return fmt.Errorf("%w\n\nyt-dlp is required. Install it and ensure it is on PATH:\n"+
-			"  https://github.com/yt-dlp/yt-dlp#installation\n"+
-			"  (e.g. `brew install yt-dlp`, `pipx install yt-dlp`, or `pip install -U yt-dlp`)", err)
+		return err
 	}
-	log.Debug("yt-dlp detected", "version", version)
 
 	deps := app.Deps{
 		Logger:     log,
@@ -98,6 +109,36 @@ func run(parent context.Context, cfg config.Config) error {
 	log.Info("done", "summary", sum.String())
 	fmt.Println(sum.String())
 	return nil
+}
+
+func runServe(parent context.Context, addr, out, web string) error {
+	ctx, stop := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	log := newLogger(true)
+	if err := os.MkdirAll(out, 0o755); err != nil {
+		return fmt.Errorf("output dir %q: %w", out, err)
+	}
+	if _, err := os.Stat(web); err != nil {
+		log.Warn("web dir not found; UI will 404 until it exists", "web", web)
+	}
+	return server.New(log, out, web).Run(ctx, addr)
+}
+
+func newRunner(ctx context.Context, log *slog.Logger, sleep time.Duration) (*ytdlp.Runner, error) {
+	var limiter *rate.Limiter
+	if sleep > 0 {
+		limiter = rate.NewLimiter(rate.Every(sleep), 1)
+	}
+	runner := ytdlp.New(limiter)
+	version, err := runner.CheckInstalled(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%w\n\nyt-dlp is required. Install it and ensure it is on PATH:\n"+
+			"  https://github.com/yt-dlp/yt-dlp#installation\n"+
+			"  (e.g. `brew install yt-dlp`, `pipx install yt-dlp`, or `pip install -U yt-dlp`)", err)
+	}
+	log.Debug("yt-dlp detected", "version", version)
+	return runner, nil
 }
 
 func newLogger(verbose bool) *slog.Logger {
