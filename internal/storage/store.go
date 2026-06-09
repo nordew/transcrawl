@@ -49,7 +49,7 @@ func Write(path, content string) error {
 func Slug(title string) string {
 	var b strings.Builder
 	prevDash := false
-	for _, r := range strings.ToLower(title) {
+	for _, r := range transliterate(strings.ToLower(title)) {
 		switch {
 		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
 			b.WriteRune(r)
