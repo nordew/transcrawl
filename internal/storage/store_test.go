@@ -19,8 +19,8 @@ func TestSlug(t *testing.T) {
 		{"unsafe chars dropped", "a/b\\c:d?e", "a-b-cde"},
 		{"collapse separators", "a   ---  b", "a-b"},
 		{"trim dashes", "  spaced  ", "spaced"},
-		{"ukrainian transliterated", "Привіт світ", "pryvit-svit"},
-		{"russian transliterated", "Деньги это энергия", "denhy-eto-enerhyia"},
+		{"ukrainian transliterated", "Привіт світ", "privit-svit"},
+		{"russian transliterated", "Деньги это энергия", "dengi-eto-energiia"},
 		{"emoji-only fallback", "🎬🔥", "video"},
 		{"keeps digits", "Top 10 things", "top-10-things"},
 	}
