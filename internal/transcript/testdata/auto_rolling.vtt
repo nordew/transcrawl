@@ -1,0 +1,14 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:02.000 align:start position:0%
+hello<00:00:00.500><c> there</c>
+
+00:00:02.000 --> 00:00:04.000 align:start position:0%
+hello there
+how<00:00:02.500><c> are</c><00:00:03.000><c> you</c>
+
+00:00:04.000 --> 00:00:06.000 align:start position:0%
+how are you
+doing&nbsp;today

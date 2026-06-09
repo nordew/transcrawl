@@ -1,0 +1,10 @@
+{
+  "events": [
+    {"tStartMs": 0, "dDurationMs": 2000, "segs": [{"utf8": "hello there"}]},
+    {"tStartMs": 2000, "dDurationMs": 10, "segs": [{"utf8": "hello there"}]},
+    {"tStartMs": 2010, "dDurationMs": 2000, "segs": [{"utf8": "how are "}, {"utf8": "you"}]},
+    {"tStartMs": 4000, "dDurationMs": 10, "segs": [{"utf8": "how are you"}]},
+    {"tStartMs": 4010, "dDurationMs": 2000, "segs": [{"utf8": "how are you "}, {"utf8": "doing today"}]},
+    {"tStartMs": 6000, "dDurationMs": 0, "segs": [{"utf8": "\n"}]}
+  ]
+}
